@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colony Sim Prototype</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="screen-menu" class="screen">
+        <div class="menu-container">
+            <h1 class="title">COLONY SIM</h1>
+            <div class="menu-buttons">
+                <button id="btn-new-game" class="menu-btn">Start New Game</button>
+                <button id="btn-continue" class="menu-btn" disabled>Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-new-world" class="modal hidden">
+        <div class="modal-content">
+            <h2>Create New World</h2>
+            <input type="text" id="input-world-name" placeholder="World Name">
+            <p id="error-new-world" style="color:red;"></p>
+            <div class="modal-actions">
+                <button class="btn-cancel">Cancel</button>
+                <button id="btn-create-confirm" class="primary">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-load-world" class="modal hidden">
+        <div class="modal-content">
+            <h2>Select World</h2>
+            <select id="select-world-list" size="5" style="width:100%; margin: 10px 0;"></select>
+            <div class="modal-actions">
+                <button class="btn-cancel">Cancel</button>
+                <button id="btn-load-confirm" class="primary">Load</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-game" class="screen hidden">
+        <div id="ui-layer">
+            <div id="toolbar-container">
+                <div id="global-bar" class="resource-bar">
+                    <div class="stat-group">
+                        <span class="label">EMPIRE:</span>
+                        <div class="stat">Turn: <span id="val-turn">1</span></div>
+                        <div class="stat">🍞 <span id="val-food-total">0</span></div>
+                        <div class="stat">🪵 <span id="val-mats-total">0</span></div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="btn-plan">Plan</button>
+                        <button id="btn-end-turn" class="primary">End Turn</button>
+                        <button id="btn-save-quit" class="small-btn">💾</button>
+                    </div>
+                </div>
+
+                <div id="context-bar" class="resource-bar context hidden">
+                    <div class="stat-group">
+                        <span id="context-name" class="label highlight">SELECTION</span>
+                        <div class="stat">🍞 <span id="val-food-local">0</span></div>
+                        <div class="stat">🪵 <span id="val-mats-local">0</span></div>
+                        <div class="stat">🧪 <span id="val-science-local">0</span></div>
+                        <div class="stat" id="context-pop-stat">👤 <span id="val-pop-local">0</span></div>
+                    </div>
+                    <button id="btn-close-context" class="small-btn">X</button>
+                </div>
+            </div>
+
+            <div id="planning-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Phase: Planning</h2>
+                    <div id="planning-options"></div>
+                    <div class="modal-actions">
+                        <button id="btn-cancel-plan">Cancel</button>
+                        <button id="btn-save-plan" class="primary">Save Plan</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="activity-panel">
+                <div class="panel-header">📜 Activity Log</div>
+                <div id="planned-log-container"></div>
+                <div id="activity-log-content"></div>
+            </div>
+
+            <div id="notifications"></div>
+        </div>
+        <div id="map-container"></div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>

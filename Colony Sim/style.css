@@ -1,0 +1,748 @@
+/* --- BASE LAYOUT --- */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #1a1a1a;
+    overflow: hidden;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* --- SCREEN MANAGEMENT --- */
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10;
+    overflow: hidden;
+    background-color: #1a1a1a; 
+    transition: opacity 0.3s ease;
+}
+
+.screen.hidden {
+    display: none !important;
+    opacity: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* --- MAIN MENU SCREEN (Z-Index: 500) --- */
+#screen-menu {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at center, #2c3e50 0%, #000000 100%);
+    z-index: 500; 
+}
+
+.menu-container {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 4rem;
+    border-radius: 12px;
+    border: 1px solid #444;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+    pointer-events: auto;
+}
+
+.title {
+    font-size: 4rem;
+    color: #ecf0f1;
+    margin-bottom: 3rem;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    letter-spacing: 5px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 300px;
+    margin: 0 auto;
+}
+
+.menu-btn {
+    padding: 15px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    background: transparent;
+    border: 2px solid #ecf0f1;
+    color: #ecf0f1;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.menu-btn:hover:not(:disabled) {
+    background: #ecf0f1;
+    color: #1a1a1a;
+    transform: scale(1.05);
+}
+
+.menu-btn:disabled {
+    border-color: #555;
+    color: #555;
+    cursor: not-allowed;
+}
+
+/* --- GAME SCREEN & UI (Z-Index: 100) --- */
+#map-container {
+    width: 100vw;
+    height: 100vh;
+    background-color: #1a1a1a;
+    cursor: grab; 
+    overflow: hidden;
+}
+
+#map-container:active {
+    cursor: grabbing;
+}
+
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; 
+    padding: 20px;
+    box-sizing: border-box; /* Ensure padding doesn't overflow width */
+    z-index: 100;
+}
+
+.stat { font-family: sans-serif; font-size: 14px; font-weight: bold; }
+
+/* Buttons */
+.small-btn { font-size: 0.8em; padding: 2px 8px; margin-left: 10px; cursor: pointer; }
+.primary { background-color: #27ae60; color: white; border: none; padding: 8px 16px; cursor: pointer; }
+.primary:hover { background-color: #2ecc71; }
+.btn-cancel { background: #7f8c8d; color: white; border: none; padding: 8px 16px; cursor: pointer; margin-right: 10px;}
+
+/* --- MAP TILES --- */
+.hex-tile {
+    stroke: #333;
+    stroke-width: 1px;
+    cursor: pointer;
+}
+
+.type-grassland { fill: #5e8d38; } 
+.type-forest    { fill: #2d6a4f; } 
+.type-plains    { fill: #90a955; } 
+.type-mountain  { fill: #6c757d; }
+.type-water     { fill: #1e3799; }
+
+.hex-tile.fog { fill: #0d0d0d; stroke: #1a1a1a; }
+.hex-tile.fog:hover { fill: #222; stroke: #555; } 
+
+.hex-tile.planned { fill: #d35400; stroke: #e67e22; stroke-dasharray: 5, 5; }
+
+/* Planned Exploration (Orange) */
+.hex-tile.planned.explore {
+    fill: #d35400; 
+    stroke: #e67e22;
+    stroke-dasharray: 5, 5;
+}
+
+/* Planned Movement (Purple) */
+.hex-tile.planned.move {
+    fill: #8e44ad;
+    stroke: #9b59b6;
+    stroke-width: 3px;
+    stroke-dasharray: none; 
+}
+
+/* --- VIRTUAL CURSOR --- */
+#cursor {
+    fill: none;
+    stroke: white;
+    stroke-width: 3px;
+    pointer-events: none; /* Click-through */
+    transition: transform 0.05s linear; /* Smooth hopping */
+    z-index: 50;
+}
+
+/* --- MODALS (Z-Index: 1000) --- */
+.modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; 
+}
+
+.modal.hidden { display: none !important; }
+
+/* UPDATED: Fixed Size Modal */
+.modal-content {
+    background: #2c3e50;
+    color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    border: 1px solid #444;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    pointer-events: auto;
+    
+    /* Fixed Dimensions */
+    width: 450px;
+    height: 625px;
+    
+    /* Layout */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Content wrapper inside modal to handle scrolling */
+#planning-options {
+    flex: 1; /* Takes available space */
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding-right: 5px; /* Space for scrollbar */
+}
+
+.modal-actions {
+    margin-top: auto; /* Pushes to bottom */
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* --- UI TOOLBARS --- */
+#toolbar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    pointer-events: none; 
+}
+
+.resource-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(18, 18, 18, 0.95);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 0 0 12px 12px;
+    border: 1px solid #444;
+    border-top: none;
+    pointer-events: auto;
+    width: 800px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    z-index: 102; 
+    transition: transform 0.3s ease;
+}
+
+.resource-bar.context {
+    background: #2c3e50; 
+    border-color: #3498db;
+    z-index: 101; 
+    margin-top: -50px; 
+    opacity: 0;
+    transition: margin-top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s;
+}
+
+.resource-bar.context.active {
+    margin-top: 5px; 
+    opacity: 1;
+}
+
+.stat-group {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.label {
+    font-size: 10px;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.label.highlight { color: #3498db; font-weight: bold; }
+
+/* --- NOTIFICATIONS --- */
+#notifications {
+    position: absolute;
+    bottom: 200px; 
+    left: 20px;
+    width: 300px;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column-reverse; 
+    z-index: 999;
+}
+
+#notifications div {
+    background: rgba(0, 0, 0, 0.6);
+    color: #eee;
+    padding: 5px 10px;
+    margin-top: 5px;
+    border-left: 3px solid #3498db; 
+    font-size: 12px;
+    font-family: sans-serif;
+    animation: fadeOut 4s forwards;
+    animation-delay: 3s; 
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; display: none; }
+}
+
+/* --- CITY MANAGER UI --- */
+.building-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.building-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #555;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.building-info h4 { margin: 0 0 5px 0; color: #ecf0f1; font-size: 14px; }
+.building-info p { margin: 0; color: #95a5a6; font-size: 11px; }
+.cost { color: #f1c40f; font-weight: bold; font-size: 12px; }
+
+.build-btn {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 12px;
+}
+.build-btn:disabled {
+    background: #7f8c8d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Progress Bar */
+.project-status {
+    background: #2c3e50;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #3498db;
+    margin-bottom: 15px;
+    text-align: center;
+}
+.progress-bar-bg {
+    background: #000;
+    height: 10px;
+    border-radius: 5px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+.progress-fill {
+    background: #3498db;
+    height: 100%;
+    width: 0%; 
+    transition: width 0.3s;
+}
+
+/* --- ACTIVITY LOG --- */
+#activity-panel {
+    position: absolute;
+    top: 20px; 
+    right: 60px;
+    width: 375px;
+    max-height: 600px;
+    background: rgba(18, 18, 18, 0.9);
+    border: 1px solid #444;
+    border-radius: 8px;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    z-index: 90;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+}
+
+.panel-header {
+    padding: 10px;
+    background: #2c3e50;
+    border-bottom: 1px solid #444;
+    font-weight: bold;
+    color: #ecf0f1;
+    border-radius: 8px 8px 0 0;
+}
+
+#activity-log-content {
+    overflow-y: auto;
+    padding: 10px;
+    font-family: sans-serif;
+    font-size: 10px;
+    flex: 1;
+}
+
+.log-turn-header {
+    color: #95a5a6;
+    font-size: 10px; /* Matched size */
+    border-bottom: 1px solid #333;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.log-row { margin-bottom: 4px; line-height: 1.4; color: #bdc3c7; }
+.log-source { color: #3498db; font-weight: bold; }
+.log-production { color: #2ecc71; } 
+.log-consumption { color: #e74c3c; } 
+.log-growth { color: #f1c40f; } 
+.log-build { color: #9b59b6; } 
+.log-warning { color: #e67e22; font-weight: bold; }
+.log-empty { padding: 10px; color: #555; font-style: italic; }
+
+/* UPDATED: Planned Log Styling */
+#planned-log-container {
+    border-bottom: 2px dashed #444;
+    background: rgba(44, 62, 80, 0.3);
+    padding: 5px 10px;
+    font-size: 10px;
+    /* No fixed height, let it grow slightly or limit if needed */
+}
+
+.log-header-plan {
+    font-size: 10px; /* Matched size */
+    color: #3498db;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+/* --- JOB UI & TABS --- */
+.job-row {
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+.job-row:hover {
+    background: rgba(255,255,255,0.1) !important;
+}
+
+.tab-container {
+    display: flex;
+    border-bottom: 1px solid #555;
+    margin-bottom: 15px;
+}
+
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #95a5a6;
+    padding: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover { color: #ecf0f1; }
+
+.tab-btn.active {
+    color: #3498db;
+    border-bottom: 2px solid #3498db;
+}
+
+.tab-content {
+    min-height: 200px;
+}
+
+/* --- CITY CYCLING ARROWS --- */
+.city-cycle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #2c3e50;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.cycle-btn {
+    background: transparent;
+    border: 1px solid #7f8c8d;
+    color: #ecf0f1;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+.cycle-btn:hover { background: #fff; color: #000; }
+
+/* --- LEVEL OF DETAIL (LOD) --- */
+/* DEFAULT: Hidden by logic/fog */
+.decor-layer.hidden {
+    display: none;
+}
+
+/* FORCE HIDE: When zoomed out, override everything else */
+.high-altitude .decor-layer {
+    display: none !important;
+}
+
+/* --- CULLING --- */
+.culled {
+    display: none !important;
+}
+
+/* --- UNIT & BUILDING ANIMATIONS --- */
+/* Campfire Flicker */
+.flicker {
+    animation: flickerAnim 0.5s infinite alternate;
+}
+
+@keyframes flickerAnim {
+    0% { opacity: 0.8; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.1); }
+}
+
+/* Smoke Rise */
+.smoke {
+    animation: smokeAnim 3s infinite linear;
+    transform-box: fill-box;
+    transform-origin: bottom center;
+}
+
+@keyframes smokeAnim {
+    0% { transform: translateY(0) scale(1); opacity: 0.6; }
+    50% { opacity: 0.3; }
+    100% { transform: translateY(-10px) scale(1.5); opacity: 0; }
+}
+
+/* --- UI HIGHLIGHTS (Tactical Layer) --- */
+
+/* The Dashed Path Line */
+.move-path-line {
+    fill: none;
+    stroke: #ecf0f1; /* White/Light Grey */
+    stroke-width: 4px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 8, 8; /* The "Ants" effect */
+    opacity: 0.8;
+    filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.5));
+    animation: dashScroll 30s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes dashScroll {
+    to { stroke-dashoffset: -1000; }
+}
+
+/* The Destination Circle */
+.move-dest-circle {
+    fill: none;
+    stroke: #ecf0f1;
+    stroke-width: 3px;
+    pointer-events: none;
+    filter: drop-shadow(0px 0px 5px #3498db); /* Blue Glow */
+    animation: destPulse 1.5s infinite ease-in-out;
+}
+
+.move-dest-circle.attack {
+    stroke: #e74c3c;
+    filter: drop-shadow(0px 0px 5px #e74c3c); /* Red Glow */
+}
+
+@keyframes destPulse {
+    0% { r: 12px; stroke-opacity: 0.6; stroke-width: 3px; }
+    50% { r: 15px; stroke-opacity: 1.0; stroke-width: 4px; }
+    100% { r: 12px; stroke-opacity: 0.6; stroke-width: 3px; }
+}
+
+/* --- SELECTION RETICLE --- */
+.selection-ring {
+    fill: none;
+    stroke: #f1c40f; /* Gold/Yellow */
+    stroke-width: 3px;
+    stroke-dasharray: 10, 5;
+    animation: spinReticle 4s linear infinite;
+    filter: drop-shadow(0px 0px 4px #f39c12);
+}
+
+@keyframes spinReticle {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Ensure the transform origin is the center of the circle */
+.selection-ring {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+/* LOCKED / CONFIRMED PATH */
+.move-path-line.locked {
+    stroke: #f1c40f; /* Gold/Yellow */
+    stroke-dasharray: 5, 5; /* Tighter dash */
+    opacity: 1.0;
+    animation: none; /* Solid, stable line */
+}
+
+.move-dest-circle.locked {
+    stroke: #f1c40f;
+    fill: rgba(241, 196, 15, 0.3);
+    animation: none;
+}
+
+/* --- MAP LEGEND (Bottom Left) --- */
+#map-legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 200; /* Must be higher than #ui-layer (100) */
+    background: rgba(18, 18, 18, 0.85); /* Matches other UI transparency */
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    pointer-events: none; /* Allows clicking through to the map if needed */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+/* --- UI REFACTOR: Context Bar --- */
+.stat-separator {
+    border-left: 1px solid #555;
+    padding-left: 10px;
+    margin-left: 10px;
+}
+
+.stat-subtext {
+    font-size: 0.8em;
+    color: #ccc;
+}
+
+.stat-max {
+    color: #7f8c8d;
+    font-size: 0.85em;
+    margin-left: 4px;
+}
+
+.stat-col {
+    display: flex;
+    flex-direction: column;
+    margin-left: 10px;
+    font-size: 0.9em;
+}
+
+/* --- UI REFACTOR: City Manager --- */
+.job-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05); /* Subtle backing */
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    border-radius: 4px; /* Nice rounded edges */
+    transition: background 0.2s;
+}
+
+.job-row:hover {
+    background: rgba(255, 255, 255, 0.1); /* Hover effect! */
+}
+
+/* --- UI REFACTOR: Activity Logs --- */
+.log-turn {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    /* Default is 'latest' (bright, no border) */
+}
+
+.log-turn.historic {
+    opacity: 0.6;
+    border-bottom: 1px dashed #444;
+}
+
+.log-header {
+    margin-bottom: 5px;
+    color: #fff;
+}
+
+.log-turn.historic .log-header {
+    color: #888; /* Dim header for old turns */
+}
+
+.log-row.compact {
+    padding: 1px 5px; /* Tighter spacing for history */
+}
+
+/* Plan Log specific */
+.log-plan-header {
+    font-weight: bold;
+    color: #3498db;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #3498db;
+}
+
+.log-plan-row {
+    font-style: italic;
+    opacity: 0.9;
+}
+
+/* --- UI REFACTOR: Tech Tree & Menus --- */
+.tech-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.tech-header {
+    margin-top: 10px;
+    border-bottom: 1px solid #555;
+    margin-bottom: 5px;
+}
+
+.tech-card {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.tech-card-footer {
+    margin-top: 5px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.text-warning {
+    color: #e74c3c;
+}
+
+.text-success {
+    color: #2ecc71;
+}
+
+.text-info {
+    color: #3498db;
+}
+
+.cost-display {
+    color: #ccc;
+    font-size: 0.9em;
+}
+
+/* --- Territory Overlay --- */
+.territory-border {
+    stroke: #f1c40f;       /* Match the Selection Ring Yellow */
+    stroke-width: 1px;     /* Thin and precise */
+    stroke-linecap: butt;
+    stroke-opacity: 0.8;   /* Slight transparency so it blends nicely */
+    
+    /* Removed dasharray and animation to make it solid */
+    transition: stroke-opacity 0.3s; 
+}
