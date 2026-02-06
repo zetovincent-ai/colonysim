@@ -1,7 +1,7 @@
 import { BuildingRegistry } from './buildingRegistry.js';
 import { JobRegistry } from './jobRegistry.js';
 import { TechRegistry } from './techRegistry.js';
-import { TechCategories } from './techCategories.js'; // <--- NEW IMPORT
+import { TechCategories } from './techCategories.js';
 import { UnitRegistry } from './unitRegistry.js'; 
 import { WorldGen } from '../world/worldGen.js';
 import { HexMath } from '../world/hexMath.js';
@@ -42,6 +42,59 @@ export class Settlement {
         this.scanResources();
     }
 
+    // =========================================================
+    //  SAVE / LOAD — Centralized Hydration
+    // =========================================================
+
+    /**
+     * Reconstruct a Settlement from raw save data with safe defaults.
+     * Handles missing fields from older saves gracefully.
+     * @param {object} data - Plain object from JSON save
+     * @returns {Settlement}
+     */
+    static fromSaveData(data) {
+        const town = new Settlement(data.name, data.location.q, data.location.r);
+        
+        // Overlay saved values onto the fresh instance
+        Object.assign(town, data);
+
+        // --- Defensive hydration for fields that may be missing in older saves ---
+        if (!town.assignments) town.assignments = {};
+        if (!town.knownTechs) town.knownTechs = [];
+        if (town.techProject === undefined) town.techProject = null;
+        if (town.unitProject === undefined) town.unitProject = null;
+
+        // Ensure every tech category exists (handles new categories added after save)
+        if (!town.techLevels) town.techLevels = {};
+        Object.keys(TechCategories).forEach(catId => {
+            if (town.techLevels[catId] === undefined) {
+                town.techLevels[catId] = 1;
+                console.log(`🛠️ Hydrated Category '${catId}' for ${town.name}`);
+            }
+        });
+
+        // Validate active techProject references a real tech
+        if (town.techProject && !TechRegistry[town.techProject.id]) {
+            console.warn(`⚠️ Save Migration: Tech project '${town.techProject.id}' not found in registry. Clearing.`);
+            town.techProject = null;
+        }
+
+        // Validate active unitProject references a real unit
+        if (town.unitProject && !UnitRegistry[town.unitProject.id]) {
+            console.warn(`⚠️ Save Migration: Unit project '${town.unitProject.id}' not found in registry. Clearing.`);
+            town.unitProject = null;
+        }
+
+        // Recalculate job caps from current map data
+        town.scanResources();
+
+        return town;
+    }
+
+    // =========================================================
+    //  RESOURCE SCANNING
+    // =========================================================
+
     scanResources() {
         // Reset Caps
         this.jobCap = {
@@ -60,22 +113,20 @@ export class Settlement {
 
         // 3. Tally Up Jobs based on Tile Types
         rangeTiles.forEach(coord => {
-            // Skip the center tile (settlement itself) for foraging logic? 
-            // Usually you can't forage inside your house.
             if (coord.q === this.location.q && coord.r === this.location.r) return;
 
             const tile = WorldGen.getTileData(coord.q, coord.r);
-            if (!tile) return; // Edge of map
+            if (!tile) return;
 
-            // Check Job Requirements
             if (JobRegistry.forager.reqTile.includes(tile.type)) this.jobCap.forager++;
             if (JobRegistry.gatherer.reqTile.includes(tile.type)) this.jobCap.gatherer++;
             if (JobRegistry.woodcutter.reqTile.includes(tile.type)) this.jobCap.woodcutter++;
         });
-
-        // Optional: Log the expansion?
-        // console.log(`${this.name} scanned ${rangeTiles.length} tiles (Radius ${radius})`);
     }
+
+    // =========================================================
+    //  TURN UPDATE
+    // =========================================================
 
     update() {
         this.turnLogs = []; 
@@ -119,22 +170,16 @@ export class Settlement {
     getPotentialYields() {
         let potential = { food: 0, materials: 0, science: 0 };
         
-        // 1. Determine Range (Dynamic based on Pop)
         let radius = (this.population >= 10) ? 2 : 1;
-        
-        // 2. Get All Tiles in Range
         const rangeTiles = HexMath.getHexesInRange(this.location.q, this.location.r, radius);
 
         rangeTiles.forEach(coord => {
-            // Skip the settlement center itself (usually urbanized/not wild)
             if (coord.q === this.location.q && coord.r === this.location.r) return;
 
             const tile = WorldGen.getTileData(coord.q, coord.r);
             if (!tile) return;
 
-            // 3. Check every Job Type against this Tile
             Object.values(JobRegistry).forEach(job => {
-                // If this tile supports this job (e.g., Forest supports Woodcutter)
                 if (job.reqTile && job.reqTile.includes(tile.type)) {
                     if (job.yield.food) potential.food += job.yield.food;
                     if (job.yield.materials) potential.materials += job.yield.materials;
@@ -146,13 +191,14 @@ export class Settlement {
         return potential;
     }
 
-    // --- TECH & CATEGORY LOGIC (NEW) ---
+    // =========================================================
+    //  TECH & CATEGORY LOGIC
+    // =========================================================
 
     getCategoryCost(catId) {
         const cat = TechCategories[catId];
         if (!cat) return 9999;
         const currentLvl = this.techLevels[catId] || 1;
-        // Cost = Base * (Multiplier ^ (CurrentLevel - 1))
         return Math.floor(cat.baseCost * Math.pow(cat.costMultiplier, currentLvl - 1));
     }
 
@@ -173,22 +219,19 @@ export class Settlement {
         if (this.techProject) return false; 
         const tech = TechRegistry[techId];
         
-        // 1. Check Requirements (Tech 2.0)
         if (tech.req) {
             for (const [catId, reqLvl] of Object.entries(tech.req)) {
                 const myLvl = this.techLevels[catId] || 0;
-                if (myLvl < reqLvl) return false; // Too dumb to research this
+                if (myLvl < reqLvl) return false;
             }
         }
 
-        // 2. Check & Pay "Prototype Cost" (Science)
         if (this.inventory.science < tech.cost) return false; 
         this.inventory.science -= tech.cost;
 
-        // 3. Start Project (Needs Innovation Effort now)
         this.techProject = { 
             id: techId, 
-            progress: tech.effort, // Use 'effort' not 'cost' for time
+            progress: tech.effort,
             max: tech.effort 
         };
         this.turnLogs.push(`tech|🎓 Started incorporating ${tech.name}`);
@@ -215,7 +258,9 @@ export class Settlement {
         this.techProject = null;
     }
 
-    // --- RECRUITMENT & CONSTRUCTION (EXISTING) ---
+    // =========================================================
+    //  RECRUITMENT & CONSTRUCTION
+    // =========================================================
 
     startUnitProject(unitId) {
         if (this.unitProject) return false;
@@ -317,7 +362,9 @@ export class Settlement {
         this.currentProject = null; 
     }
 
-    // --- GROWTH & JOBS (EXISTING) ---
+    // =========================================================
+    //  GROWTH & JOBS
+    // =========================================================
 
     getHousingCap() {
         let cap = 2; 
@@ -329,7 +376,7 @@ export class Settlement {
     }
 
     handleGrowth() {
-         if (this.population >= this.getHousingCap()) {
+        if (this.population >= this.getHousingCap()) {
             this.consumeFood(false); 
             return; 
         }
@@ -342,7 +389,6 @@ export class Settlement {
             if (this.growthBucket >= this.growthThreshold) {
                 this.population++;
                 this.growthBucket = 0;
-                // Increase threshold slightly for next pop (diminishing returns)
                 this.growthThreshold = Math.floor(this.growthThreshold * 1.2); 
                 this.turnLogs.push(`growth|🎉 A new citizen was born! Pop is now ${this.population}`);
             }
@@ -351,8 +397,6 @@ export class Settlement {
 
     consumeFood(allowSurplus) {
         const foodNeed = this.population;
-        // Calculate Growth Cost (1 if surplus allowed, else 0)
-        // We check this logically: if we HAVE enough for need+1, we take it.
         let growthCost = 0;
         if (allowSurplus && this.inventory.food >= foodNeed + 1) {
             growthCost = 1;
@@ -364,15 +408,12 @@ export class Settlement {
             this.inventory.food -= totalToEat;
             
             if (growthCost > 0) {
-                // growth happened
                 this.turnLogs.push(`consumption|🍽️ Consumed ${totalToEat} Food (${foodNeed} eaten, ${growthCost} growth)`);
-                return true; // Return true to trigger bucket fill in handleGrowth
+                return true;
             } else {
-                // maintenance only
                 this.turnLogs.push(`consumption|🍽️ Consumed ${totalToEat} Food (Maintenance)`);
             }
         } else {
-            // Starvation Logic
             const eaten = this.inventory.food;
             this.inventory.food = 0;
             this.turnLogs.push(`warning|⚠️ STARVATION: Population needed ${foodNeed} but only ate ${eaten}`);
@@ -426,11 +467,15 @@ export class Settlement {
         }
     }
 
+    // =========================================================
+    //  PLANNED EVENTS (Preview for Activity Log)
+    // =========================================================
+
     getPlannedEvents() {
         let events = [];
         let projectedFoodIn = 0; 
         
-        // 1. CALCULATE PRODUCTION FIRST (Don't log yet, just sum)
+        // 1. CALCULATE PRODUCTION FIRST
         let prodStrings = [];
         Object.entries(this.assignments).forEach(([jobId, count]) => {
             if (count > 0) {
@@ -456,9 +501,8 @@ export class Settlement {
         const foodNeed = this.population;
         const currentStock = this.inventory.food;
         const totalAvailable = currentStock + projectedFoodIn;
-        const housingCap = this.getHousingCap ? this.getHousingCap() : 99;
+        const housingCap = this.getHousingCap();
         
-        // Determine Growth Logic for Projection
         let projectedGrowthCost = 0;
         let projectedOut = foodNeed;
         
@@ -470,16 +514,15 @@ export class Settlement {
         const netChange = projectedFoodIn - projectedOut;
         const sign = netChange >= 0 ? "+" : "";
 
-        // 3. ADD SUMMARY LINES (The "Accountant" View)
-        // We use a special 'info' style or bolding
+        // 3. ADD SUMMARY LINES
         events.push(`info|📊 NET FOOD: ${sign}${netChange} (In: ${projectedFoodIn}, Out: ${projectedOut})`);
         
         if (projectedGrowthCost > 0) {
             events.push(`consumption|🍽️ Anticipated: ${projectedOut} Food (${foodNeed} eat, ${projectedGrowthCost} growth)`);
         } else if (totalAvailable < foodNeed) {
-             events.push(`warning|⚠️ WARNING: Starvation Imminent! (Short by ${foodNeed - totalAvailable})`);
+            events.push(`warning|⚠️ WARNING: Starvation Imminent! (Short by ${foodNeed - totalAvailable})`);
         } else {
-             events.push(`consumption|🍽️ Anticipated: ${projectedOut} Food (Maintenance)`);
+            events.push(`consumption|🍽️ Anticipated: ${projectedOut} Food (Maintenance)`);
         }
 
         // 4. ADD PRODUCTION DETAILS

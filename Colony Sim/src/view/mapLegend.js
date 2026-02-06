@@ -3,7 +3,7 @@ export const MapLegend = {
     // UPDATED COLORS to match style.css
     terrainTypes: [
         { code: 'grassland', name: 'Grassland', color: '#5e8d38' },
-        { code: 'forest',    name: 'Forest',    color: '#0b2d0b' }, // Darker
+        { code: 'forest',    name: 'Forest',    color: '#0b2d0b' },
         { code: 'plains',    name: 'Plains',    color: '#90a955' },
         { code: 'mountain',  name: 'Mountain',  color: '#6c757d' },
         { code: 'water',     name: 'Water',     color: '#0077b6' }
@@ -16,35 +16,19 @@ export const MapLegend = {
         // Header
         const title = document.createElement('h4');
         title.innerText = "Terrain Key";
-        title.style.margin = "0 0 10px 0";
-        title.style.borderBottom = "1px solid #555";
-        title.style.paddingBottom = "5px";
-        title.style.fontSize = "14px";
-        title.style.color = "#ecf0f1";
+        title.className = 'legend-title';
         container.appendChild(title);
 
         // Render Items
         this.terrainTypes.forEach(type => {
             const row = document.createElement('div');
-            Object.assign(row.style, {
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '5px',
-                fontSize: '12px',
-                color: '#ccc'
-            });
+            row.className = 'legend-row';
 
             // The Color Swatch
             const swatch = document.createElement('div');
-            Object.assign(swatch.style, {
-                width: '15px',
-                height: '15px',
-                backgroundColor: type.color,
-                marginRight: '10px',
-                border: '1px solid #333',
-                borderRadius: '3px' // Slight roundness
-            });
-
+            swatch.className = 'legend-swatch';
+            swatch.style.backgroundColor = type.color; // Dynamic per-terrain — must stay inline
+            
             // The Label
             const label = document.createElement('span');
             label.innerText = type.name;
