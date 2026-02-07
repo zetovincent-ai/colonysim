@@ -66,24 +66,21 @@ export const WorldGen = {
         console.log("Pass 2: Coastal refinement...");
         WorldTruthMap.forEach((tile, key) => {
             if (tile.type === 'plains' || tile.type === 'grassland') {
-                if (this._hasWaterNeighbor(tile.q, tile.r) && Math.random() < CONFIG.beachChance) {
+                if (this._hasOceanNeighbor(tile.q, tile.r) && Math.random() < CONFIG.beachChance) {
                     tile.type = 'sand';
                 }
             }
         });
 
-        // === PASS 3: WATER DEPTH CLASSIFICATION ===
-        console.log("Pass 3: Water depth classification...");
+        // === PASS 3: DEEP OCEAN CLASSIFICATION ===
+        console.log("Pass 3: Deep ocean classification...");
         WorldTruthMap.forEach((tile, key) => {
-            if (tile.type === 'water') {
+            if (tile.type === 'ocean') {
                 const distToLand = this._distanceToLand(tile.q, tile.r);
                 
-                if (distToLand === 1) {
-                    tile.type = 'ocean'; // Coastal waters
-                } else if (distToLand > CONFIG.deepOceanDistance) {
+                if (distToLand > CONFIG.deepOceanDistance) {
                     tile.type = 'deep_ocean';
                 }
-                // else stays 'water' (will become rivers/lakes later)
             }
         });
 
@@ -102,12 +99,12 @@ export const WorldGen = {
 
     // === HELPER: Determine base terrain type from elevation/moisture ===
     _determineBaseTerrain(elevation, moisture) {
-        // WATER
+        // WATER → Default to OCEAN (fresh water reserved for rivers)
         if (elevation < CONFIG.deepWater) {
-            return 'water';
+            return 'ocean';
         }
         if (elevation < CONFIG.shallowWater) {
-            return 'water';
+            return 'ocean';
         }
         
         // LOWLANDS
@@ -163,18 +160,18 @@ export const WorldGen = {
         return 'grassland';
     },
 
-    // === HELPER: Check if tile has water neighbor ===
-    _hasWaterNeighbor(q, r) {
+    // === HELPER: Check if tile has ocean neighbor ===
+    _hasOceanNeighbor(q, r) {
         const neighbors = HexMath.getNeighbors(q, r);
         return neighbors.some(n => {
             const tile = this.getTileData(n.q, n.r);
-            return tile && (tile.type === 'water' || tile.type === 'ocean' || tile.type === 'deep_ocean');
+            return tile && (tile.type === 'ocean' || tile.type === 'deep_ocean');
         });
     },
 
     // === HELPER: Calculate distance to nearest land tile ===
     _distanceToLand(q, r) {
-        // BFS to find nearest non-water tile
+        // BFS to find nearest non-ocean tile
         const visited = new Set();
         const queue = [{ q, r, dist: 0 }];
         visited.add(HexMath.coordsToKey(q, r));
@@ -183,7 +180,7 @@ export const WorldGen = {
             const current = queue.shift();
             
             const tile = this.getTileData(current.q, current.r);
-            if (tile && tile.type !== 'water' && tile.type !== 'ocean' && tile.type !== 'deep_ocean') {
+            if (tile && tile.type !== 'ocean' && tile.type !== 'deep_ocean') {
                 return current.dist;
             }
 
