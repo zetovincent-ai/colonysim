@@ -51,15 +51,6 @@
 
 ## 🐛 Bug List & Debt
 
-### 1. Settlement Rendering Pop Cap (Visual / Logic)
-**Description:** Settlements always render as a single tent, even when population is 12+.
-**Cause:** `gameEngine.js` calls `HexRenderer.renderSettlement(q, r)` but fails to pass the 3rd argument (`town.population`).
-**Fix:**
-* Update `gameEngine.js` (in `start()` and `executeTurn()`) to pass `town.population`.
-* *Note:* The renderer also currently hard-caps tents at 4. This will be replaced by the **Dynamic Visual Resolver** in Priority 2.
-
-### 2. Stack Cycling (UX Polish)
+### 1. Stack Cycling (UX Polish)
 **Description:** Units currently block clicks on Settlements underneath them.
 **Fix:** Update `handleExploreEvent` to cycle selection (Unit -> City -> Unit) if clicked repeatedly.
-
-update test
