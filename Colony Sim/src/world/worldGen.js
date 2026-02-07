@@ -7,23 +7,23 @@ const CONFIG = {
     octaves: 3,    
     waterLevel: 0.0,
     
-    // Elevation Thresholds (fuzzy ranges)
-    deepWater: -0.3,
-    shallowWater: 0.0,
-    plains: 0.15,
-    hillsStart: 0.35,
-    hillsEnd: 0.55,
-    mountainStart: 0.55,
-    mountainEnd: 0.75,
-    peakStart: 0.85,
+    // Elevation Thresholds (rebalanced for 60-65% land, 35-40% water)
+    deepWater: -0.5,        // Very deep parts
+    shallowWater: -0.25,    // MAIN WATERLINE - targets ~37% water
+    plains: 0.10,           // Lowlands
+    hillsStart: 0.50,       // Hills pushed much higher
+    hillsEnd: 0.65,         
+    mountainStart: 0.75,    // Mountains rare
+    mountainEnd: 0.88,      
+    peakStart: 0.94,        // Impassable peaks very rare
     
     // Moisture & Biome
-    forestThreshold: 0.3,
-    desertThreshold: 0.2,
+    forestThreshold: 0.3,   // Forest spawn
+    desertThreshold: 0.12,  // REDUCED - less desert sand
     swampMoisture: 0.6,
     
     // Coastal & Special Terrain
-    beachChance: 0.4,
+    beachChance: 0.25,      // REDUCED - fewer beaches
     swampChance: 0.3,
     deepOceanDistance: 5
 };
