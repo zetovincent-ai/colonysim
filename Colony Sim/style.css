@@ -837,3 +837,75 @@ body, html {
 .recruit-pop-req {
     font-size: 0.85em;
 }
+
+/* =============================================================================
+   NEW TERRAIN TYPES - Map Generation 2.0
+   ============================================================================= */
+
+/* --- SAND (Beaches & Desert) --- */
+.type-sand {
+    fill: #d4a574;
+    stroke: #c49563;
+}
+
+/* --- SWAMP --- */
+.type-swamp {
+    fill: #4a5f4a;
+    stroke: #3d4f3d;
+}
+
+/* --- HILLS --- */
+.type-hills {
+    fill: #8d99ae;
+    stroke: #7a8595;
+}
+
+/* --- MOUNTAINS (Keep existing, but ensure it's defined) --- */
+.type-mountains {
+    fill: #6c757d;
+    stroke: #5a6268;
+}
+
+/* --- IMPASSABLE MOUNTAINS (Peaks) --- */
+.type-impassable_mountains {
+    fill: #495057;
+    stroke: #343a40;
+}
+
+/* --- WATER TYPES --- */
+
+/* Fresh Water (Rivers/Lakes) */
+.type-water {
+    fill: #48cae4;
+    stroke: #00b4d8;
+}
+
+/* Ocean (Coastal) */
+.type-ocean {
+    fill: #0077b6;
+    stroke: #005f8a;
+}
+
+/* Deep Ocean */
+.type-deep_ocean {
+    fill: #023e8a;
+    stroke: #012a5e;
+}
+
+/* --- MAP LEGEND CATEGORY STYLING --- */
+.legend-category {
+    font-size: 0.75em;
+    font-weight: bold;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 2px;
+}
+
+/* First category shouldn't have extra top margin */
+.legend-category:first-of-type {
+    margin-top: 0;
+}

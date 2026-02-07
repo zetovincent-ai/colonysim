@@ -39,14 +39,9 @@ export const Pathfinder = {
                 const tileData = WorldGen.getTileData(next.q, next.r);
                 if (!tileData) continue; // Out of bounds or void
                 
-                // --- COST LOGIC ---
-                // Base movement cost is 1. 
-                // Future: Add logic for Hills (+1), Forests (+1), Water (Impassable) here.
-                let moveCost = 1; 
-                if (tileData.type === 'water') moveCost = 999; // Impassable for now
-                if (tileData.type === 'mountain') moveCost = 3; 
-                if (tileData.type === 'forest' || tileData.type === 'dense_forest') moveCost = 2;
-
+                // === MOVEMENT COST LOGIC ===
+                let moveCost = this._getMoveCost(tileData.type);
+                
                 if (moveCost >= 999) continue; // Skip impassable
 
                 const newCost = costSoFar.get(currentKey) + moveCost;
@@ -62,22 +57,54 @@ export const Pathfinder = {
         }
 
         // 3. Reconstruct Path
-        const path = [];
-        let curr = endNode;
-        let currKey = `${curr.q},${curr.r}`;
+        let path = [];
+        let current = endNode;
+        let currentKey = `${current.q},${current.r}`;
 
-        if (!cameFrom.has(currKey)) return []; // No path found
-
-        while (currKey !== startKey) {
-            path.push(curr);
-            curr = cameFrom.get(currKey);
-            if (!curr) break;
-            currKey = `${curr.q},${curr.r}`;
+        while (currentKey !== startKey) {
+            const tile = WorldGen.getTileData(current.q, current.r);
+            if (tile) path.unshift(tile);
+            
+            current = cameFrom.get(currentKey);
+            if (!current) break; // Path not found
+            currentKey = `${current.q},${current.r}`;
         }
-        // Note: We usually don't include the start tile in the visual line path, 
-        // but renderMovementPath handles that.
-        // path.push(startNode); 
-        
-        return path.reverse();
+
+        // Add start tile if not already included
+        const startTile = WorldGen.getTileData(startNode.q, startNode.r);
+        if (startTile && (path.length === 0 || path[0].q !== startTile.q || path[0].r !== startTile.r)) {
+            path.unshift(startTile);
+        }
+
+        return path;
+    },
+
+    // === MOVEMENT COST TABLE ===
+    _getMoveCost(tileType) {
+        const costs = {
+            // Lowlands (Fast)
+            'plains': 1,
+            'grassland': 1,
+            'sand': 1,
+            
+            // Forests (Moderate)
+            'forest': 2,
+            'dense_forest': 3,
+            
+            // Elevation (Slow)
+            'hills': 2,
+            'mountains': 3,
+            'impassable_mountains': 999, // Never passable
+            
+            // Water (Tech-gated)
+            'water': 999,        // Rivers/lakes (boats needed)
+            'ocean': 999,        // Coastal (ships needed)
+            'deep_ocean': 999,   // Far ocean (advanced ships)
+            
+            // Special
+            'swamp': 3          // Difficult terrain
+        };
+
+        return costs[tileType] ?? 1; // Default to 1 if unknown type
     }
 };
